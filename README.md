@@ -1,6 +1,6 @@
 # ETABS Structural Design Companion
 
-A premium pair of client-side web application dashboards designed to streamline modelling workflows, cross-reference Indian Standard (IS) code clauses, and track structural member optimization logs for ETABS and SAFE.
+A premium pair of client-side web application dashboards designed to streamline modelling workflows, cross-reference Indian Standard (IS) code clauses, and track structural member optimization logs for ETABS.
 
 Built with rich CSS styling, tactile animations, responsive circular progress indicators, and local browser persistence.
 
