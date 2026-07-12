@@ -1,4 +1,4 @@
-# ETABS & SAFE Structural Design Companion
+# ETABS Structural Design Companion
 
 A premium pair of client-side web application dashboards designed to streamline modelling workflows, cross-reference Indian Standard (IS) code clauses, and track structural member optimization logs for ETABS and SAFE. 
 
@@ -8,9 +8,9 @@ Built with rich CSS styling, tactile animations, responsive circular progress in
 
 ## 🛠️ Included Editions
 
-1. **[ETABS & SAFE Design Cockpit](etabs-safe-design-cockpit.html)**:
+1. **[ETABS Design Cockpit](etabs-design-cockpit.html)**:
    - A high-density, cockpit theme optimized for rapid engineering workflows.
-2. **[ETABS & SAFE Bento Dashboard](etabs-safe-bento-dashboard.html)**:
+2. **[ETABS Bento Dashboard](etabs-bento-dashboard.html)**:
    - A modern bento-style dashboard using clean card layouts and neon gradients.
 
 ---
@@ -34,7 +34,7 @@ Built with rich CSS styling, tactile animations, responsive circular progress in
 ## 💻 How to Run Locally
 
 Both dashboards are completely self-contained and run 100% offline. No node modules, servers, or installations required.
-- Double-click **[etabs-safe-design-cockpit.html](etabs-safe-design-cockpit.html)** or **[etabs-safe-bento-dashboard.html](etabs-safe-bento-dashboard.html)** to launch them directly in Chrome, Edge, Safari, or Firefox.
+- Double-click **[etabs-design-cockpit.html](etabs-design-cockpit.html)** or **[etabs-bento-dashboard.html](etabs-bento-dashboard.html)** to launch them directly in Chrome, Edge, Safari, or Firefox.
 
 ---
 
