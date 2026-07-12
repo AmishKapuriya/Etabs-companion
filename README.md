@@ -8,9 +8,9 @@ Built with rich CSS styling, tactile animations, responsive circular progress in
 
 ## 🛠️ Included Editions
 
-1. **[ETABS Design Cockpit]([etabs-design-cockpit.html](https://amishkapuriya.github.io/Etabs-companion/etabs-design-cockpit.html))**:
+1. **[ETABS Design Cockpit](https://amishkapuriya.github.io/Etabs-companion/etabs-design-cockpit.html)**:
     - A high-density, cockpit theme optimized for rapid engineering workflows.
-2. **[ETABS Bento Dashboard]([etabs-bento-dashboard.html](https://amishkapuriya.github.io/Etabs-companion/etabs-bento-dashboard.html))**:
+2. **[ETABS Bento Dashboard](https://amishkapuriya.github.io/Etabs-companion/etabs-bento-dashboard.html)**:
     - A modern bento-style dashboard using clean card layouts and neon gradients.
 
 ---
