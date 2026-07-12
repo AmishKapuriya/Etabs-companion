@@ -34,7 +34,6 @@ Built with rich CSS styling, tactile animations, responsive circular progress in
 ## 💻 How to Run Locally
 
 Both dashboards are completely self-contained and run 100% offline. No node modules, servers, or installations required.
-
 - Double-click **[etabs-design-cockpit.html](etabs-design-cockpit.html)** or **[etabs-bento-dashboard.html](etabs-bento-dashboard.html)** to launch them directly in Chrome, Edge, Safari, or Firefox.
 
 ---
