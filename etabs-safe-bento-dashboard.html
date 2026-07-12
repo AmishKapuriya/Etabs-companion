@@ -1,0 +1,2536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ETABS / SAFE Structural Design Bento Dashboard — Companion Tool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#f8fafc;
+    --panel:rgba(15, 17, 26, 0.85); /* Dark Glass Bento */
+    --panel-2:rgba(25, 29, 44, 0.75);
+    --panel-3:rgba(40, 46, 68, 0.65);
+    --rule:rgba(0, 240, 255, 0.12);
+    --rule-strong:rgba(0, 240, 255, 0.25);
+    --paper:#f8fafc;
+    --muted:#00f0ff;
+    --bg-radial:radial-gradient(circle at 50% 0%, #08090d 0%, #030406 100%);
+    --bg-grid-color:rgba(0, 240, 255, 0.03);
+    
+    --rust:#ff5e00; /* Vibrant tactical orange */
+    --rust-grad:linear-gradient(135deg, #ff5e00, #ff8a00);
+    --rust-dim:rgba(255, 94, 0, 0.08);
+    --rust-glow:0 0 20px rgba(255, 94, 0, 0.25);
+    
+    --brass:#fbbf24;
+    --olive:#00ff66; /* Neon Green */
+    --olive-dim:rgba(0, 255, 102, 0.08);
+    
+    --amber:#fbbf24;
+    --amber-dim:rgba(251, 191, 36, 0.08);
+    
+    --danger:#ff007f; /* Hot Magenta */
+    --danger-dim:rgba(255, 0, 127, 0.08);
+    
+    --orb-color-1:#00f0ff; /* Cyan */
+    --orb-color-2:#ff007f; /* Hot Pink */
+    --orb-opacity:0.15;
+    --video-opacity:0.25;
+    
+    --font-display:'Plus Jakarta Sans', sans-serif;
+    --font-body:'Plus Jakarta Sans', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+  }
+
+  body.light-theme {
+    --ink:#1e2433; /* Soft dark charcoal */
+    --panel:rgba(250, 249, 246, 0.75); /* Soft Warm Linen Glass */
+    --panel-2:rgba(255, 255, 255, 0.85);
+    --panel-3:rgba(255, 255, 255, 0.95);
+    --rule:rgba(30, 36, 51, 0.05);
+    --rule-strong:rgba(30, 36, 51, 0.1);
+    --paper:#fdfdfc;
+    --muted:#5c6475;
+    --bg-radial:radial-gradient(circle at 50% 0%, #f5f3ef 0%, #eae7e1 100%);
+    --bg-grid-color:rgba(30, 36, 51, 0.015);
+    
+    --brass:#b45309;
+    --olive:#166534;
+    --olive-dim:rgba(22, 163, 74, 0.06);
+    
+    --amber:#9a3412;
+    --amber-dim:rgba(154, 52, 18, 0.06);
+    
+    --danger:#991b1b;
+    --danger-dim:rgba(153, 27, 27, 0.06);
+    
+    --orb-color-1:#fed7aa;
+    --orb-color-2:#e0f2fe;
+    --orb-opacity:0.65;
+    --video-opacity:0.04;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--bg-radial);
+    color:var(--ink);
+    font-family:var(--font-body);
+    font-size:14.5px;
+    line-height:1.6;
+    min-height:100vh;
+    padding:80px 20px 20px 20px; /* Space for the marquee banner */
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+    overflow-x:hidden;
+    transition: background 0.3s ease, color 0.3s ease;
+  }
+
+  /* Scrolling Marquee Header */
+  .marquee-bar {
+    width: 100%;
+    background: #0c0d12;
+    border-bottom: 2px solid var(--muted);
+    overflow: hidden;
+    white-space: nowrap;
+    padding: 10px 0;
+    box-shadow: 0 4px 20px rgba(0, 240, 255, 0.15);
+    position: fixed;
+    top: 0; left: 0;
+    z-index: 100;
+  }
+  body.light-theme .marquee-bar {
+    background: #fdfdfc;
+    border-bottom-color: var(--rule-strong);
+    box-shadow: 0 4px 20px rgba(30, 36, 51, 0.04);
+  }
+  .marquee-content {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    animation: marquee 20s linear infinite;
+  }
+  body.light-theme .marquee-content {
+    color: var(--ink);
+  }
+  @keyframes marquee {
+    0% { transform: translate3d(0, 0, 0); }
+    100% { transform: translate3d(-50%, 0, 0); }
+  }
+  
+  /* Video Background */
+  .bg-video {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    object-fit: cover;
+    z-index: -3;
+    pointer-events: none;
+    opacity: var(--video-opacity);
+    mix-blend-mode: screen;
+    transition: opacity 0.3s ease;
+  }
+  body.light-theme .bg-video {
+    mix-blend-mode: multiply;
+  }
+  
+  /* Animated scrolling grid */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: 
+      linear-gradient(var(--bg-grid-color) 1px, transparent 1px) 0 0 / 40px 40px,
+      linear-gradient(90deg, var(--bg-grid-color) 1px, transparent 1px) 0 0 / 40px 40px;
+    z-index: -1;
+    pointer-events: none;
+    animation: gridScroll 12s linear infinite;
+  }
+  @keyframes gridScroll {
+    from { background-position: 0 0; }
+    to { background-position: 0 40px; }
+  }
+
+  /* Animated floating cosmic nebula orbs */
+  .bg-glow {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: var(--orb-opacity);
+    z-index: -2;
+    pointer-events: none;
+    transition: background 0.3s ease, opacity 0.3s ease;
+  }
+  .bg-glow-1 {
+    width: 450px;
+    height: 450px;
+    background: var(--orb-color-1);
+    top: -150px;
+    left: -100px;
+    animation: float1 25s infinite alternate ease-in-out;
+  }
+  .bg-glow-2 {
+    width: 550px;
+    height: 550px;
+    background: var(--orb-color-2);
+    bottom: -150px;
+    right: -100px;
+    animation: float2 30s infinite alternate ease-in-out;
+  }
+  @keyframes float1 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(160px, 120px) scale(1.15); }
+  }
+  @keyframes float2 {
+    0% { transform: translate(0, 0) scale(1); }
+    100% { transform: translate(-120px, -160px) scale(1.1); }
+  }
+
+  ::selection{background:rgba(0, 240, 255, 0.15);color:#fff;}
+  ::-webkit-scrollbar{width:8px;height:8px;}
+  ::-webkit-scrollbar-track{background:rgba(0,0,0,0.3);}
+  ::-webkit-scrollbar-thumb{background:var(--rule-strong);border-radius:4px;}
+  a{color:var(--muted);text-decoration:none;transition:color 0.2s;}
+  a:hover{color:#fff;}
+  button{font-family:var(--font-body);cursor:pointer;}
+  input,textarea,select{font-family:var(--font-body);}
+
+  .app{
+    width:100%;
+    max-width:1280px;
+    display: grid;
+    grid-template-columns: 320px 16px minmax(0, 1fr);
+    gap: 16px;
+    animation: fadeIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    z-index: 1;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (max-width:960px){
+    .app { grid-template-columns: 1fr; gap: 24px; }
+  }
+
+  /* Custom vertical scroll progress indicator + sticky wrap */
+  .scroll-tracker-col {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .scroll-tracker-sticky-wrap {
+    position: sticky;
+    top: 80px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    height: calc(100vh - 120px);
+  }
+  .scroll-tracker-track {
+    width: 6px;
+    flex: 1;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .scroll-tracker-fill {
+    width: 100%;
+    height: var(--scroll-pct, 0%);
+    background: linear-gradient(to bottom, var(--orb-color-1), var(--orb-color-2));
+    box-shadow: 0 0 12px var(--orb-color-1);
+    border-radius: 4px;
+    transition: height 0.05s ease-out;
+  }
+  .scroll-top-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2px solid var(--rule-strong);
+    color: var(--muted);
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 2px 2px 0px #000;
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .scroll-top-btn {
+    border-width: 1px;
+    background: #ffffff;
+    box-shadow: none;
+    color: var(--ink);
+  }
+  .scroll-top-btn:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0px #000;
+    border-color: var(--muted);
+    color: #fff;
+  }
+  body.light-theme .scroll-top-btn:hover {
+    transform: translateY(-1.5px);
+    border-color: var(--rust);
+  }
+  .scroll-top-btn:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0px #000;
+  }
+
+  @media (max-width:960px){
+    .scroll-tracker-col {
+      position: fixed;
+      top: 38px;
+      left: 0;
+      width: 100vw;
+      height: 4px;
+      z-index: 1000;
+      display: block;
+    }
+    .scroll-tracker-sticky-wrap {
+      position: static;
+      height: 100%;
+      width: 100%;
+      display: block;
+    }
+    .scroll-tracker-track {
+      width: 100%;
+      height: 100%;
+      position: static;
+      border-radius: 0;
+      border: none;
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .scroll-tracker-fill {
+      height: 100% !important;
+      width: var(--scroll-pct, 0%);
+      background: linear-gradient(to right, var(--orb-color-1), var(--orb-color-2));
+      transition: width 0.05s ease-out;
+    }
+    .scroll-top-btn {
+      display: none !important;
+    }
+  }
+
+  /* ---------- Sidebar / Project Hub (Bento Card) ---------- */
+  .sidebar {
+    background: var(--panel);
+    border: 2px solid var(--rule-strong);
+    border-radius: 24px;
+    padding: 24px;
+    box-shadow: 6px 6px 0px rgba(0, 240, 255, 0.15); /* Brutalist offset shadow */
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    height: fit-content;
+    position: sticky;
+    top: 80px;
+    transition: all 0.3s ease;
+  }
+  body.light-theme .sidebar {
+    border-width: 1px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.04);
+  }
+  .sidebar-head {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orb-color-2);
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid var(--rule);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  body.light-theme .sidebar-head {
+    color: var(--ink);
+    border-bottom-width: 1px;
+  }
+  .sidebar-head::after {
+    content: 'ACTIVE';
+    background: rgba(0, 240, 255, 0.1);
+    color: var(--muted);
+    padding: 2px 8px;
+    border-radius: 6px;
+    font-size: 9px;
+    border: 1px solid var(--rule-strong);
+  }
+  body.light-theme .sidebar-head::after {
+    background: rgba(15, 23, 42, 0.05);
+    color: var(--ink);
+  }
+  .proj-list {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .proj-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    border: 1px solid var(--rule);
+    background: rgba(255,255,255,0.01);
+    border-radius: 14px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .proj-item {
+    background: rgba(255,255,255,0.4);
+  }
+  .proj-item:hover {
+    background: rgba(0, 240, 255, 0.04);
+    border-color: var(--muted);
+    transform: translateX(4px) scale(1.02);
+  }
+  body.light-theme .proj-item:hover {
+    background: #ffffff;
+    border-color: var(--rust);
+  }
+  .proj-item.active {
+    background: linear-gradient(135deg, rgba(0, 240, 255, 0.08), rgba(255, 0, 127, 0.02));
+    border-color: var(--muted);
+    box-shadow: 0 0 15px rgba(0, 240, 255, 0.2);
+  }
+  body.light-theme .proj-item.active {
+    background: #ffffff;
+    border-color: var(--rust);
+    box-shadow: 0 4px 20px rgba(255, 94, 0, 0.12);
+  }
+  .proj-name {
+    font-weight: 800;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    letter-spacing: -0.01em;
+  }
+  .proj-type {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  body.light-theme .proj-type {
+    color: var(--muted);
+  }
+  .proj-progress {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orb-color-2);
+    flex-shrink: 0;
+    background: rgba(255, 0, 127, 0.08);
+    border: 1px solid rgba(255, 0, 127, 0.15);
+    padding: 3px 8px;
+    border-radius: 6px;
+  }
+  body.light-theme .proj-progress {
+    color: var(--rust);
+    background: rgba(255, 94, 0, 0.08);
+    border-color: rgba(255, 94, 0, 0.15);
+  }
+  .proj-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    padding: 0 4px;
+    cursor: pointer;
+    line-height: 1;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+  }
+  .proj-del:hover {
+    color: var(--orb-color-2);
+    transform: scale(1.2) rotate(90deg);
+  }
+
+  .add-project {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 2px solid var(--rule);
+  }
+  body.light-theme .add-project {
+    border-top-width: 1px;
+  }
+  .add-project input, .add-project select {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--rule-strong);
+    border-radius: 12px;
+    color: var(--ink);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    margin-bottom: 10px;
+    transition: all 0.2s ease;
+  }
+  body.light-theme .add-project input, body.light-theme .add-project select {
+    background: #ffffff;
+    border-color: var(--rule-strong);
+  }
+  .add-project input:focus, .add-project select:focus {
+    border-color: var(--muted);
+    outline: none;
+    background: rgba(0, 0, 0, 0.45);
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.2);
+  }
+  body.light-theme .add-project input:focus, body.light-theme .add-project select:focus {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(255, 94, 0, 0.15);
+    background: #ffffff;
+  }
+
+  /* Tactical Neon Orange / Black Brutalist Button */
+  .btn {
+    background: var(--rust);
+    color: #ffffff;
+    border: 2px solid #000;
+    border-radius: 12px;
+    font-weight: 800;
+    padding: 12px 20px;
+    font-size: 13px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-family: var(--font-body);
+    width: 100%;
+    cursor: pointer;
+    box-shadow: 4px 4px 0px #000; /* Flat Brutalist shadow */
+    transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+    overflow: hidden;
+  }
+  body.light-theme .btn {
+    border: none;
+    box-shadow: 0 4px 15px rgba(255, 94, 0, 0.35);
+  }
+  .btn:hover {
+    transform: translate(-2px, -2px);
+    box-shadow: 6px 6px 0px #000;
+  }
+  body.light-theme .btn:hover {
+    background: #ff761a;
+    box-shadow: 0 6px 20px rgba(255, 94, 0, 0.5);
+    transform: translateY(-1.5px);
+  }
+  .btn:active {
+    transform: translate(2px, 2px);
+    box-shadow: 2px 2px 0px #000;
+  }
+  body.light-theme .btn:active {
+    transform: translateY(0);
+  }
+
+  .template-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    letter-spacing: 0.08em;
+  }
+  .chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 16px;
+  }
+  .chip {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    border: 1px solid var(--rule-strong);
+    border-radius: 8px;
+    color: var(--muted);
+    padding: 6px 10px;
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  body.light-theme .chip {
+    background: rgba(255,255,255,0.5);
+    color: var(--muted);
+  }
+  .chip:hover {
+    border-color: var(--muted);
+    color: #fff;
+    background: rgba(0, 240, 255, 0.12);
+  }
+  .chip.active {
+    border-color: var(--muted);
+    color: #fff;
+    background: rgba(0, 240, 255, 0.15);
+  }
+  body.light-theme .chip:hover {
+    border-color: var(--rust);
+    color: var(--ink);
+    background: #ffffff;
+  }
+
+  /* ---------- Right Side Dashboard ---------- */
+  .dashboard {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  /* ---------- Title Block Deck (Bento Card) ---------- */
+  .titleblock {
+    background: var(--panel);
+    border: 2px solid var(--rule-strong);
+    border-radius: 24px;
+    padding: 24px 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 6px 6px 0px rgba(0, 240, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  body.light-theme .titleblock {
+    border-width: 1px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.04);
+  }
+  .titleblock::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0;
+    width: 250px; height: 100%;
+    background: radial-gradient(circle at 100% 0%, rgba(0, 240, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  body.light-theme .titleblock::after {
+    background: radial-gradient(circle at 100% 0%, rgba(255, 94, 0, 0.04) 0%, transparent 70%);
+  }
+  .tb-main { padding: 0; }
+  .tb-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--orb-color-2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+  }
+  body.light-theme .tb-eyebrow {
+    color: var(--rust);
+  }
+  .tb-eyebrow::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    background: var(--orb-color-2);
+    border-radius: 50%;
+    box-shadow: 0 0 12px var(--orb-color-2);
+    animation: pulse 1.5s infinite;
+  }
+  body.light-theme .tb-eyebrow::before {
+    background: var(--rust);
+    box-shadow: 0 0 10px var(--rust);
+  }
+  @keyframes pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.5; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .tb-title {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 28px;
+    letter-spacing: -0.02em;
+    background: linear-gradient(to right, #ffffff, var(--orb-color-1));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin: 0;
+  }
+  body.light-theme .tb-title {
+    background: none;
+    -webkit-text-fill-color: initial;
+    color: var(--ink);
+  }
+  .tb-sub {
+    color: var(--paper);
+    opacity: 0.7;
+    font-size: 13.5px;
+    margin-top: 4px;
+    font-weight: 500;
+  }
+  body.light-theme .tb-sub {
+    color: var(--muted);
+    opacity: 1;
+  }
+  .tb-grid {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .tb-cell {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid var(--rule);
+    border-radius: 14px;
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    min-width: 100px;
+    flex-shrink: 0;
+  }
+  body.light-theme .tb-cell {
+    background: #ffffff;
+    border: 1px solid var(--rule-strong);
+  }
+  .tb-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+  .tb-value {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--paper);
+    margin-top: 4px;
+  }
+  body.light-theme .tb-value {
+    color: var(--ink);
+  }
+  .tb-value.accent {
+    color: var(--orb-color-1);
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);
+  }
+  body.light-theme .tb-value.accent {
+    color: var(--rust);
+    text-shadow: none;
+  }
+
+  /* Circular Progress ring with glowing support */
+  .progress-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    width: 64px;
+    height: 64px;
+  }
+  .progress-ring {
+    transform: rotate(-90deg);
+  }
+  .progress-ring circle:first-child {
+    stroke: rgba(255, 255, 255, 0.08);
+  }
+  body.light-theme .progress-ring circle:first-child {
+    stroke: rgba(15, 23, 42, 0.06);
+  }
+  .progress-ring__circle {
+    transition: stroke-dashoffset 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    stroke-linecap: round;
+  }
+  body.light-theme .progress-ring__circle {
+    filter: none !important;
+  }
+  .progress-percentage {
+    position: absolute;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--orb-color-1);
+    text-shadow: 0 0 8px rgba(0, 240, 255, 0.4);
+  }
+  body.light-theme .progress-percentage {
+    color: var(--rust);
+    text-shadow: none;
+  }
+
+  /* Theme toggle button styling */
+  .theme-toggle-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 2px solid var(--rule-strong);
+    color: var(--ink);
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .theme-toggle-btn {
+    border-width: 1px;
+    background: #ffffff;
+    color: var(--ink);
+  }
+  .theme-toggle-btn:hover {
+    transform: scale(1.08) rotate(15deg);
+    border-color: var(--muted);
+  }
+  body.light-theme .theme-toggle-btn:hover {
+    border-color: var(--rust);
+  }
+
+  @media (max-width:960px){
+    .titleblock {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    .tb-grid {
+      width: 100%;
+      flex-wrap: wrap;
+    }
+    .tb-cell {
+      flex: 1 1 calc(50% - 6px);
+    }
+  }
+
+  /* ---------- Main Dashboard Tab Area (Bento Card) ---------- */
+  .main {
+    background: var(--panel);
+    border: 2px solid var(--rule-strong);
+    border-radius: 24px;
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 6px 6px 0px rgba(0, 240, 255, 0.15);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    overflow: hidden;
+    transition: all 0.3s ease;
+  }
+  body.light-theme .main {
+    border-width: 1px;
+    box-shadow: 0 10px 40px rgba(15, 23, 42, 0.04);
+  }
+  .tabs {
+    display: flex;
+    border-bottom: 2px solid var(--rule);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 0 16px;
+  }
+  body.light-theme .tabs {
+    border-bottom-width: 1px;
+    background: rgba(0,0,0,0.02);
+  }
+  .tab-btn {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 12.5px;
+    padding: 18px 12px;
+    border-bottom: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .tab-btn {
+    color: var(--muted);
+  }
+  .tab-btn.active {
+    color: var(--orb-color-1);
+    border-bottom-color: var(--orb-color-1);
+    text-shadow: 0 0 10px rgba(0, 240, 255, 0.4);
+  }
+  body.light-theme .tab-btn.active {
+    color: var(--rust);
+    border-bottom-color: var(--rust);
+    text-shadow: none;
+  }
+  .tab-btn:hover {
+    color: var(--paper);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  body.light-theme .tab-btn:hover {
+    color: var(--ink);
+    background: rgba(255, 255, 255, 0.4);
+  }
+  .tab-body {
+    padding: 24px;
+    flex: 1;
+    animation: tabFadeIn 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  @keyframes tabFadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ---------- Empty State Dashboard ---------- */
+  .empty-state {
+    padding: 80px 40px;
+    text-align: center;
+    color: var(--muted);
+    max-width: 540px;
+    margin: auto;
+    animation: welcomeFade 0.6s ease;
+  }
+  @keyframes welcomeFade {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+  .empty-state .big {
+    font-family: var(--font-display);
+    font-weight: 800;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    color: var(--paper);
+    margin-bottom: 14px;
+  }
+  body.light-theme .empty-state .big {
+    color: var(--ink);
+  }
+  .empty-state .sub {
+    font-size: 14.5px;
+    line-height: 1.65;
+    color: var(--muted);
+  }
+
+  /* ---------- Checklist (Mission Control) ---------- */
+  .phase {
+    border: 1px solid var(--rule);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    background: var(--panel-2);
+    overflow: hidden;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    position: relative;
+  }
+  body.light-theme .phase {
+    background: rgba(255, 255, 255, 0.45);
+    border-color: var(--rule-strong);
+  }
+  .phase:hover {
+    border-color: var(--orb-color-1);
+    background: rgba(0, 240, 255, 0.02);
+    transform: translateY(-2px) scale(1.005);
+    box-shadow: 4px 4px 0px rgba(0, 240, 255, 0.1);
+  }
+  body.light-theme .phase:hover {
+    border-color: var(--rust);
+    background: #ffffff;
+    box-shadow: 0 6px 20px rgba(15, 23, 42, 0.04);
+  }
+  .phase.done {
+    border-color: rgba(0, 255, 102, 0.15);
+    background: rgba(0, 255, 102, 0.01);
+  }
+  body.light-theme .phase.done {
+    border-color: rgba(22, 163, 74, 0.15);
+    background: rgba(22, 163, 74, 0.01);
+  }
+  .phase.done:hover {
+    border-color: var(--olive);
+    box-shadow: 4px 4px 0px rgba(0, 255, 102, 0.1);
+  }
+  .phase-head {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: #fff;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+  }
+  body.light-theme .phase-num {
+    color: var(--ink);
+    background: rgba(15, 23, 42, 0.05);
+    border-color: rgba(15, 23, 42, 0.08);
+  }
+  .phase.done .phase-num {
+    background: var(--olive);
+    border-color: var(--olive);
+    color: #06070c;
+    box-shadow: 0 0 12px var(--olive);
+  }
+  body.light-theme .phase.done .phase-num {
+    color: #ffffff;
+    box-shadow: 0 0 10px rgba(22, 163, 74, 0.3);
+  }
+  .phase-check {
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    border: 2px solid var(--rule-strong);
+    border-radius: 6px;
+    background: rgba(0,0,0,0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: transparent;
+    transition: all 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .phase-check {
+    border-width: 1.5px;
+    background: #ffffff;
+  }
+  .phase.done .phase-check {
+    background: var(--olive);
+    border-color: var(--olive);
+    color: #06070c;
+    font-weight: 800;
+    box-shadow: 0 0 10px rgba(0,255,102,0.4);
+    transform: scale(1.05);
+  }
+  body.light-theme .phase.done .phase-check {
+    color: #ffffff;
+    box-shadow: none;
+  }
+  .phase-title-wrap {
+    flex: 1;
+    min-width: 0;
+  }
+  .phase-title {
+    font-weight: 700;
+    font-size: 15px;
+    color: var(--ink);
+  }
+  .phase-clause {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--brass);
+    background: rgba(251, 191, 36, 0.06);
+    border: 1px solid rgba(251, 191, 36, 0.15);
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 6px;
+  }
+  .phase-summary {
+    font-size: 13.5px;
+    color: var(--paper);
+    margin-top: 6px;
+    line-height: 1.55;
+    font-weight: 500;
+  }
+  body.light-theme .phase-summary {
+    color: var(--muted);
+  }
+  .phase-caret {
+    font-family: var(--font-mono);
+    color: var(--muted);
+    font-size: 11px;
+    transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  }
+  .phase.open .phase-caret {
+    transform: rotate(180deg);
+  }
+  .phase-detail {
+    max-height: 0;
+    overflow: hidden;
+    padding: 0 20px;
+    background: rgba(0, 0, 0, 0.2);
+    transition: max-height 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), padding 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  body.light-theme .phase-detail {
+    background: rgba(0,0,0,0.02);
+  }
+  .phase.open .phase-detail {
+    max-height: 400px;
+    padding: 16px 20px 20px 62px;
+    border-top: 1px solid var(--rule);
+  }
+  body.light-theme .phase.open .phase-detail {
+    border-top-color: var(--rule-strong);
+  }
+  .phase-watch {
+    font-size: 13.5px;
+    color: var(--ink);
+    background: var(--amber-dim);
+    border-left: 4px solid var(--amber);
+    border-radius: 6px;
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    line-height: 1.6;
+    font-weight: 500;
+  }
+  .phase-watch b {
+    color: var(--amber);
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    display: block;
+    margin-bottom: 6px;
+  }
+  .phase-note {
+    width: 100%;
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--rule-strong);
+    border-radius: 10px;
+    color: var(--ink);
+    font-size: 13.5px;
+    padding: 12px;
+    min-height: 70px;
+    resize: vertical;
+    transition: all 0.2s ease;
+  }
+  body.light-theme .phase-note {
+    background: #ffffff;
+  }
+  .phase-note:focus {
+    border-color: var(--muted);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.25);
+  }
+  body.light-theme .phase-note:focus {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(255, 94, 0, 0.15);
+  }
+  .phase-note::placeholder{color:var(--muted);}
+  
+  .checklist-summary {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--muted);
+    letter-spacing: 0.05em;
+  }
+  body.light-theme .checklist-summary {
+    color: var(--muted);
+  }
+  .checklist-summary span:first-child {
+    background: rgba(0, 240, 255, 0.05);
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid var(--rule);
+  }
+  body.light-theme .checklist-summary span:first-child {
+    background: rgba(15, 23, 42, 0.03);
+    border-color: var(--rule-strong);
+  }
+
+  /* Inline Story Editors Styling */
+  .story-edit-input {
+    background: transparent;
+    border: 1px dashed transparent;
+    color: var(--ink);
+    font-family: inherit;
+    font-size: 13.5px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    width: 100%;
+    transition: all 0.2s ease;
+  }
+  .story-edit-input:hover {
+    border-color: var(--rule-strong);
+    background: rgba(255, 255, 255, 0.02);
+  }
+  body.light-theme .story-edit-input:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  .story-edit-input:focus {
+    border-color: var(--muted);
+    background: rgba(0, 0, 0, 0.45);
+    outline: none;
+  }
+  body.light-theme .story-edit-input:focus {
+    background: #ffffff;
+    border-color: var(--rust);
+  }
+  .story-edit-input.num {
+    width: 90px;
+  }
+
+  /* ---------- DCR log ---------- */
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13.5px;
+    margin-bottom: 20px;
+  }
+  #codes-table {
+    table-layout: fixed;
+    width: 100%;
+  }
+  #codes-table th:nth-child(1), #codes-table td:nth-child(1) { width: 14%; }
+  #codes-table th:nth-child(2), #codes-table td:nth-child(2) { width: 18%; }
+  #codes-table th:nth-child(3), #codes-table td:nth-child(3) { width: 23%; }
+  #codes-table th:nth-child(4), #codes-table td:nth-child(4) { width: 33%; }
+  #codes-table th:nth-child(5), #codes-table td:nth-child(5) { width: 12%; text-align: center; }
+  th {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--orb-color-2);
+    text-align: left;
+    padding: 14px;
+    border-bottom: 2px solid var(--rule-strong);
+    background: rgba(0, 0, 0, 0.2);
+  }
+  body.light-theme th {
+    color: var(--ink);
+    background: rgba(0,0,0,0.02);
+  }
+  td {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--rule);
+    vertical-align: middle;
+    word-break: break-word;
+  }
+  body.light-theme td {
+    border-bottom-color: var(--rule-strong);
+  }
+  tr:hover td {
+    background: rgba(255, 255, 255, 0.02);
+  }
+  body.light-theme tr:hover td {
+    background: rgba(255, 255, 255, 0.4);
+  }
+  td.num{font-family:var(--font-mono);}
+  .dcr-badge {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    display: inline-block;
+    white-space: nowrap;
+  }
+  .dcr-ok {
+    background: var(--olive-dim);
+    color: var(--olive);
+    border: 1px solid rgba(0, 255, 102, 0.2);
+  }
+  body.light-theme .dcr-ok {
+    color: var(--olive);
+    background: var(--olive-dim);
+    border-color: rgba(22, 163, 74, 0.2);
+  }
+  .dcr-warn {
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid rgba(251, 191, 36, 0.2);
+  }
+  .dcr-fail {
+    background: var(--danger-dim);
+    color: var(--danger);
+    border: 1px solid rgba(255, 0, 127, 0.2);
+  }
+  body.light-theme .dcr-fail {
+    color: var(--danger);
+    background: var(--danger-dim);
+    border-color: rgba(185, 28, 28, 0.2);
+  }
+  
+  .dcr-form {
+    display: grid;
+    grid-template-columns: 1.3fr .8fr 1.1fr 1.6fr auto;
+    gap: 10px;
+    margin-top: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid var(--rule);
+  }
+  body.light-theme .dcr-form {
+    background: rgba(0,0,0,0.02);
+    border-color: var(--rule-strong);
+  }
+  @media (max-width:680px){.dcr-form{grid-template-columns:1fr;}}
+  .dcr-form input, .dcr-form select {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid var(--rule-strong);
+    border-radius: 10px;
+    color: var(--ink);
+    padding: 12px 14px;
+    font-size: 13.5px;
+    width: 100%;
+    transition: all 0.25s ease;
+  }
+  body.light-theme .dcr-form input, body.light-theme .dcr-form select {
+    background: #ffffff;
+    border-color: var(--rule-strong);
+  }
+  .dcr-form input:focus, .dcr-form select:focus {
+    border-color: var(--muted);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(0, 240, 255, 0.2);
+  }
+  body.light-theme .dcr-form input:focus, body.light-theme .dcr-form select:focus {
+    border-color: var(--rust);
+    box-shadow: 0 0 0 3px rgba(255, 94, 0, 0.12);
+  }
+  .row-del {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-size: 20px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .row-del:hover{color:var(--danger);transform:scale(1.15) rotate(90deg);}
+  .dcr-hint {
+    font-size: 12.5px;
+    color: var(--muted);
+    margin-top: 14px;
+    line-height: 1.6;
+  }
+
+  /* ---------- Footer ---------- */
+  .app-footer {
+    grid-column: 1 / -1;
+    margin-top: 32px;
+    padding: 24px 0;
+    border-top: 2px solid var(--rule-strong);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  body.light-theme .app-footer {
+    border-top-width: 1px;
+  }
+
+
+</style>
+</head>
+<body>
+<!-- Stars in Space Video Background (Scrub-linked) -->
+<video class="bg-video" playsinline preload="auto">
+  <source src="https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-1610-large.mp4" type="video/mp4">
+</video>
+
+<!-- Floating animated soft pastel orbs (Lurais style in light mode / neon glow in dark) -->
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<!-- Global Linear Gradients Defs -->
+<svg style="width:0; height:0; position:absolute;" width="0" height="0">
+  <defs>
+    <linearGradient id="orangeGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00f0ff" />
+      <stop offset="100%" stop-color="#ff007f" />
+    </linearGradient>
+    <filter id="circleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3.5" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
+</svg>
+
+<!-- Header Marquee Banner -->
+<div class="marquee-bar">
+  <div class="marquee-content">
+    🚀 DESIGNING FOR BMC JURISDICTION · 🏗️ IS 456 COMPLIANT · ⚡ IS 1893 ACTIVE · 💻 DUCTILE DESIGN ENABLED · 🚀 ENGINE STATUS: OPTIMAL · 🚀 DESIGNING FOR BMC JURISDICTION · 🏗️ IS 456 COMPLIANT · ⚡ IS 1893 ACTIVE · 💻 DUCTILE DESIGN ENABLED · 🚀 ENGINE STATUS: OPTIMAL · 
+  </div>
+</div>
+
+<div class="app" id="app"></div>
+
+
+
+<script>
+(function(){
+
+  /* ============ DATA ============ */
+  var PHASES = [
+    {id:0,title:"Pre-modeling prep",clause:"",summary:"Grid finalized, soil report pulled, seismic zone + wind speed verified independently, thumb-rule sizing done.",watch:"Skip this and expect 3–4 resize iterations in ETABS instead of 1–2."},
+    {id:1,title:"Grid & story data",clause:"",summary:'Story heights set. "Similar to" flag used only for genuinely identical floors.',watch:'Wrong "similar to" flag silently copies wrong geometry/loads — no warning is raised.'},
+    {id:2,title:"Materials & stiffness modifiers",clause:"IS 1893:2016 Cl 6.4.3",summary:"Grades assigned per member. Cracked-section modifiers applied: 0.35Ig beams, 0.7Ig columns.",watch:"Skip modifiers → drift check passes on paper, fails in reality. Non-conservative, not conservative."},
+    {id:3,title:"Section definitions",clause:"IS 13920 Cl 6.1.2",summary:"Preliminary sizes entered. Rigid-zone/end-offset convention fixed and applied consistently.",watch:"Auto-select hides sizing logic — avoid until you can already predict the output yourself."},
+    {id:4,title:"Draw model",clause:"",summary:"Beams/columns/slabs drawn. Checked for duplicate/overlapping elements and unconnected joints.",watch:"Duplicates silently double stiffness and mass at that location. No error is thrown."},
+    {id:5,title:"Supports / restraints",clause:"",summary:"Fixed / pinned / spring chosen per footing type and soil report, not by default habit.",watch:"Wrong base fixity → wrong footing moment, wrong column base force."},
+    {id:6,title:"Diaphragms",clause:"IS 1893:2016 Table 6",summary:"Rigid for regular compact plans. Semi-rigid for irregular / elongated / large-opening plans.",watch:"Rigid diaphragm on an irregular plan masks real torsional irregularity."},
+    {id:7,title:"Load patterns",clause:"IS 875 Pt 1–3, IS 1893:2016",summary:"DL / SDL / LL (occupancy-specific) / EQ / WX defined. Self-weight not double-counted with manual SDL.",watch:"Blanket LL for all areas over- or under-designs by occupancy type."},
+    {id:8,title:"Load combinations",clause:"IS 456:2000 Cl 36.4.1",summary:"All sign permutations of EQX/EQY generated — not a subset.",watch:"Incomplete combos = member 'optimized' against the wrong governing case."},
+    {id:9,title:"Mass source",clause:"IS 1893:2016 Cl 7.3.2",summary:'Seismic weight = DL + SDL + code % of LL. "From loads" ticked, not self-weight only.',watch:"Under-massed model → every member's seismic force is wrong, silently."},
+    {id:10,title:"Slab / area behavior",clause:"",summary:"Membrane / rigid used for load transfer if slab design is done separately in SAFE.",watch:"Double-designing slabs in ETABS and SAFE without reconciling wastes time and can conflict."},
+    {id:11,title:"Flat slab design & punching shear",clause:"IS 456:2000 Cl 31",summary:"Column drop dimensions and slab thickness verified. Punching shear (two-way shear) checked at d/2 perimeter around column/drop in SAFE.",watch:"Under-designed flat slab thickness or drops leads to sudden, brittle punching shear failures with zero warnings."},
+    {id:12,title:"Run analysis + sanity check",clause:"",summary:"No instability warnings. Reaction sum checked against total applied gravity load.",watch:"30-second check — catches most modeling errors before they compound downstream."},
+    {id:13,title:"Seismic / dynamic checks",clause:"IS 1893:2016 Cl 7.7.3 / 7.11.1.1",summary:"Modal mass ≥90% both directions. Drift ≤0.004h. Dynamic base shear scaled up if below static.",watch:"Doing this after design (not before) means a full re-run anyway. Sequence matters."},
+    {id:14,title:"Design preferences",clause:"IS 456:2000 / IS 13920:2016",summary:"Ductile detailing toggle matches the R-factor actually claimed in the seismic load definition.",watch:"R=5 claimed without committing to full 13920 detailing = under-designed base shear on paper."},
+    {id:15,title:"Assign design combinations",clause:"",summary:"Full combo set from Phase 8 linked to the design run, not a default subset.",watch:"A silently-truncated combo set undoes all the work in Phase 8."},
+    {id:16,title:"Run design, read DCR",clause:"IS 456 Cl 26.5.1.1 / 26.5.3",summary:"DCR and Ast% read per member against code min/max, not just the pass/fail flag.",watch:"A green DCR without a min/max steel check can still be non-compliant."},
+    {id:17,title:"Optimization loop",clause:"",summary:"Target DCR 0.75–0.95. Resize before adding rebar. Add rebar before bumping grade.",watch:"Local fix without re-checking mass/drift leaves the global model inconsistent."},
+    {id:18,title:"Deflection check",clause:"IS 456:2000 Cl 23.2",summary:"Span/depth deemed-to-satisfy checked independently of the strength DCR.",watch:"Strength pass ≠ serviceability pass. Don't skip this because DCR looked fine."},
+    {id:19,title:"Detailing / rebar extraction",clause:"SP 34, IS 13920",summary:"Capacity-design shear (not elastic analysis shear) used for ductile members.",watch:"Reporting analysis-case shear instead of capacity-design shear under-designs stirrups."},
+    {id:20,title:"Pre-BMC checklist",clause:"",summary:"All phases above re-verified in one final pass before submission.",watch:"This is the last gate — treat it as a real re-check, not a formality."}
+  ];
+
+  var PROJECT_TEMPLATES = [
+    {name:"Residential",type:"Residential"},
+    {name:"Commercial",type:"Commercial"},
+    {name:"Other",type:"Other"}
+  ];
+
+  var CODES = [
+    {code:'IS 456:2000',clause:'Cl 26.5.1.1(a)',topic:'Min tension reinforcement — beams',value:'Ast,min / (b·d) ≥ 0.85 / fy',tag:'v'},
+    {code:'IS 456:2000',clause:'Cl 26.5.1.1(b)',topic:'Max tension reinforcement — beams',value:'Ast,max ≤ 0.04 · b · D',tag:'v'},
+    {code:'IS 456:2000',clause:'Cl 26.5.3',topic:'Column longitudinal steel',value:'Min 0.8% gross area · Max 6% (4% practical)',tag:'v'},
+    {code:'IS 456:2000',clause:'Cl 26.5.2 (commonly cited)',topic:'Min shear reinforcement',value:'Asv / (b·sv) ≥ 0.4 / (0.87·fy)',tag:'s'},
+    {code:'IS 456:2000',clause:'Cl 23.2.1 (commonly cited)',topic:'Span/depth ratio — deflection control',value:'Basic: 7 cantilever / 20 simply supported / 26 continuous, modified by tension & compression steel factors',tag:'s'},
+    {code:'IS 456:2000',clause:'Cl 36.4.1 (number shifts by edition)',topic:'Load combinations, limit state',value:'1.5(DL+LL) · 1.2(DL+LL±EL) · 1.5(DL±EL) · 0.9DL±1.5EL',tag:'s'},
+    {code:'IS 456:2000',clause:'Table 16',topic:'Nominal cover by exposure',value:'Mild 20 / Moderate 30 / Severe 45 / V.Severe 50 / Extreme 75mm (typical — verify against specified durability class)',tag:'s'},
+    {code:'IS 456:2000',clause:'Cl 31.6',topic:'Punching shear capacity — flat slabs',value:'Tc = 0.25 · sqrt(fck) (shear capacity at d/2 perimeter, ks = 0.5 + Bc <= 1.0)',tag:'v'},
+    {code:'IS 456:2000',clause:'Cl 31.2.1',topic:'Flat slab design methods',value:'Direct Design Method (min 3 continuous spans, panel ratio < 1.33) / Equivalent Frame Method',tag:'v'},
+    {code:'IS 456:2000',clause:'Cl 31.3',topic:'Min thickness of flat slabs',value:'Thickness >= L/32 (with drops) or L/28 (without drops) for Fe415/Fe500',tag:'v'},
+    {code:'IS 1893:2016 Pt.1',clause:'Cl 6.4.3',topic:'Cracked-section stiffness for seismic analysis',value:'0.35·Ig beams · 0.7·Ig columns',tag:'v'},
+    {code:'IS 1893:2016 Pt.1',clause:'Cl 7.6.2',topic:'Empirical fundamental period, bare RC frame',value:'Ta = 0.075·h^0.75 (no-infill moment frame — verify coefficient for your frame type)',tag:'v'},
+    {code:'IS 1893:2016 Pt.1',clause:'Cl 7.7.3',topic:'Dynamic vs static base shear scaling',value:'If Vb(dynamic) < Vb(static): scale all response quantities by Vb(static)/Vb(dynamic)',tag:'v'},
+    {code:'IS 1893:2016 Pt.1',clause:'Cl 7.11.1.1',topic:'Storey drift limit',value:'Δ / h ≤ 0.004, factored seismic force, partial factor 1.0',tag:'v'},
+    {code:'IS 1893:2016 Pt.1',clause:'Cl 7.3.2 (commonly cited)',topic:'Seismic weight / mass source',value:'DL + code-specified % of LL (% depends on floor LL intensity)',tag:'s'},
+    {code:'IS 1893:2016 Pt.1',clause:'~Cl 7.7.5 area (exact sub-clause varies by source)',topic:'Minimum modal mass participation',value:'Sum of modal mass ≥ 90% of total seismic mass, each direction',tag:'s'},
+    {code:'IS 1893:2016 Pt.1',clause:'Table 6',topic:'Plan/vertical irregularity criteria',value:'Torsional, soft-storey, weak-storey, re-entrant corner, floating column definitions',tag:'s'},
+    {code:'IS 1893:2016 Pt.1',clause:'Table 8/9 (verify edition)',topic:'Importance factor I',value:'Hospital/critical facility typically 1.2–1.5 · Standard residential 1.0 — confirm current table for your category',tag:'s'},
+    {code:'IS 13920:2016',clause:'Cl 6.1',topic:'Axial stress threshold — beam vs column behaviour',value:'Factored axial stress < 0.08·fck → design as flexural member',tag:'v'},
+    {code:'IS 13920:2016',clause:'Cl 6.1.1 / 6.1.2 / 6.1.3',topic:'Beam dimension limits',value:'b/D ≥ 0.3 · b ≥ 200mm · D ≤ clear span/4',tag:'v'},
+    {code:'IS 13920:2016',clause:'Cl 6.2.2',topic:'Beam longitudinal steel, min/max',value:'ρmin = 0.24·√fck/fy · ρmax = 0.025 (2.5%)',tag:'v'},
+    {code:'IS 13920:2016',clause:'Cl 6.2.4',topic:'Min steel at intermediate sections',value:'≥ 1/4 of max steel provided at either joint face',tag:'v'},
+    {code:'IS 13920:2016',clause:'Cl 6.3.5 (partially confirmed)',topic:'Close stirrup spacing near beam ends',value:'Closed stirrups within 2d of joint face — verify exact spacing formula',tag:'s'},
+    {code:'IS 13920:2016',clause:'Cl 7.4',topic:'Column longitudinal steel, min/max',value:'Min 0.8% · Max 6% gross area',tag:'v'},
+    {code:'IS 13920:2016',clause:'Cl 7.6.1.2',topic:'Confining hoop zone in columns',value:'Plastic hinge zone ≥ larger of (clear depth, clear height/6, 450mm) from joint face',tag:'v'},
+    {code:'IS 875 Pt.2',clause:'Table 1 (commonly cited)',topic:'Imposed (live) load by occupancy',value:'Occupancy-specific — residential, toilet, balcony, corridor all differ; don\'t blanket one value',tag:'s'},
+    {code:'IS 875 Pt.3',clause:'Basic wind speed map / Vz formula',topic:'Design wind speed',value:'Vz = Vb·k1·k2·k3·k4 — verify Vb for exact site, not nearest-city default',tag:'s'}
+  ];
+
+  /* ============ STATE ============ */
+  var state = {
+    projects: [],
+    currentId: null,
+    project: null,
+    tab: 'info',
+    openPhase: null,
+    storyAddMode: 'single',
+    fileHandle: null,
+    ready: false
+  };
+
+  var app = document.getElementById('app');
+
+  /* ============ STORAGE HELPERS ============ */
+  async function storageGet(key){
+    try{
+      if(window.storage && typeof window.storage.get === 'function') {
+        var r = await window.storage.get(key, false);
+        return r ? JSON.parse(r.value) : null;
+      } else {
+        var r = localStorage.getItem(key);
+        return r ? JSON.parse(r) : null;
+      }
+    }catch(e){ return null; }
+  }
+  async function storageSet(key, value){
+    try{
+      if(window.storage && typeof window.storage.set === 'function') {
+        await window.storage.set(key, JSON.stringify(value), false);
+        return true;
+      } else {
+        localStorage.setItem(key, JSON.stringify(value));
+        return true;
+      }
+    }catch(e){ console.error('storage set failed', key, e); return false; }
+  }
+  async function storageDelete(key){
+    try{
+      if(window.storage && typeof window.storage.delete === 'function') {
+        await window.storage.delete(key, false);
+      } else {
+        localStorage.removeItem(key);
+      }
+    }catch(e){ /* ignore */ }
+  }
+
+  function emptyProjectData(){
+    var phases = {};
+    PHASES.forEach(function(p){ phases[p.id] = {done:false, note:''}; });
+    
+    var defaultStories = [
+      {id: 's1', name: 'GF', height: 3.2, aboveGround: true},
+      {id: 's2', name: 'SF', height: 3.1, aboveGround: true},
+      {id: 's3', name: 'TF', height: 3.1, aboveGround: true}
+    ];
+
+    return {
+      phases: phases,
+      dcrLog: [],
+      info: {
+        lx: 15,
+        ly: 20,
+        height: 9.4,
+        zone: 0.16,
+        iValue: 1,
+        rValue: 5,
+        awi: 'Active',
+        windSpeed: 44,
+        sbc: '200 kN/m² @ 1.5m',
+        soilType: '2-Medium',
+        flatSlab: false,
+        stories: defaultStories
+      }
+    };
+  }
+
+  function getActivePhases(){
+    var info = state.project && state.project.info;
+    var hasFlatSlab = info && info.flatSlab;
+    return PHASES.filter(function(p){
+      if(p.id === 11) return !!hasFlatSlab;
+      return true;
+    });
+  }
+
+  function calculateTotalHeight(stories){
+    var h = 0;
+    stories.forEach(function(s){
+      if(s.aboveGround !== false) {
+        h += Math.abs(parseFloat(s.height) || 0);
+      }
+    });
+    return parseFloat(h.toFixed(2));
+  }
+
+  function calculatePeriod(h, l){
+    if (l <= 0) return 0;
+    return parseFloat((0.09 * h / Math.sqrt(l)).toFixed(3));
+  }
+
+  /* ============ INIT ============ */
+  async function init(){
+    var list = await storageGet('projects-list');
+    state.projects = list || [];
+    var savedTheme = await storageGet('app-theme');
+    if(savedTheme === 'light') {
+      document.body.classList.add('light-theme');
+    } else {
+      document.body.classList.remove('light-theme');
+    }
+    if(state.projects.length){
+      await selectProject(state.projects[0].id, true);
+    } else {
+      state.ready = true;
+      render();
+    }
+  }
+
+  async function selectProject(id, skipRender){
+    var proj = await storageGet('project:' + id);
+    if(!proj) proj = emptyProjectData();
+    
+    // Ensure info block exists for legacy projects
+    if(!proj.info){
+      proj.info = {
+        lx: 15,
+        ly: 20,
+        height: 9.4,
+        zone: 0.16,
+        iValue: 1,
+        rValue: 5,
+        awi: 'Active',
+        windSpeed: 44,
+        sbc: '200 kN/m² @ 1.5m',
+        soilType: '2-Medium',
+        flatSlab: false,
+        stories: [
+          {id: 's1', name: 'GF', height: 3.2, aboveGround: true},
+          {id: 's2', name: 'SF', height: 3.1, aboveGround: true},
+          {id: 's3', name: 'TF', height: 3.1, aboveGround: true}
+        ]
+      };
+    }
+    
+    // Fix variables for existing projects
+    if(!proj.info.sbc) proj.info.sbc = '200 kN/m² @ 1.5m';
+    if(!proj.info.soilType) proj.info.soilType = '2-Medium';
+    if(proj.info.flatSlab === undefined) proj.info.flatSlab = false;
+    
+    proj.info.stories.forEach(function(s){
+      if(s.aboveGround === undefined) s.aboveGround = true;
+    });
+    
+    state.currentId = id;
+    state.project = proj;
+    state.tab = 'info'; // Default tab when selecting a project
+    state.openPhase = null;
+    state.ready = true;
+    render();
+  }
+
+  async function addProject(name, type){
+    if(!name || !name.trim()) return;
+    var id = 'p' + Date.now() + Math.floor(Math.random()*1000);
+    state.projects.push({id:id, name:name.trim(), type:type});
+    await storageSet('projects-list', state.projects);
+    await storageSet('project:' + id, emptyProjectData());
+    await selectProject(id);
+  }
+
+  async function deleteProject(id, evt){
+    if(evt) evt.stopPropagation();
+    state.projects = state.projects.filter(function(p){return p.id !== id;});
+    await storageSet('projects-list', state.projects);
+    await storageDelete('project:' + id);
+    if(state.currentId === id){
+      if(state.projects.length){ await selectProject(state.projects[0].id); }
+      else { state.currentId = null; state.project = null; render(); }
+    } else {
+      render();
+    }
+  }
+
+  async function saveCurrentProject(){
+    if(!state.currentId) return;
+    await storageSet('project:' + state.currentId, state.project);
+  }
+
+  /* ============ RENDER ============ */
+  function todayStr(){
+    var d = new Date();
+    return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  }
+
+  function progressCount(){
+    if(!state.project) return {done:0,total:PHASES.length};
+    var activePhases = getActivePhases();
+    var done = 0;
+    activePhases.forEach(function(p){ 
+      if(state.project.phases[p.id] && state.project.phases[p.id].done) done++; 
+    });
+    return {done:done, total:activePhases.length};
+  }
+
+  function render(){
+    var currentProj = state.projects.find(function(p){return p.id===state.currentId;});
+    var prog = progressCount();
+
+    var html = '';
+    html += renderSidebar();
+    html += renderScrollTracker();
+    html += '<div class="dashboard">';
+    html += renderTitleblock(currentProj, prog);
+    html += renderMain(currentProj);
+    html += '</div>';
+    html += renderFooter();
+    app.innerHTML = html;
+    bindEvents();
+    if(state.tab === 'codes') {
+      bindCodesSearch();
+      updateFckCalculations();
+      var fckSelect = document.getElementById('calc-fck');
+      if(fckSelect){
+        fckSelect.addEventListener('change', updateFckCalculations);
+      }
+    }
+    updateScrollIndicator();
+  }
+
+  function renderScrollTracker(){
+    return '<div class="scroll-tracker-col">' +
+      '<div class="scroll-tracker-sticky-wrap">' +
+        '<div class="scroll-tracker-track">' +
+          '<div class="scroll-tracker-fill" id="scroll-bar-fill"></div>' +
+        '</div>' +
+        '<button class="scroll-top-btn" data-action="scroll-top" title="Scroll to top">▲</button>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderTitleblock(currentProj, prog){
+    var pct = prog.total ? Math.round(100*prog.done/prog.total) : 0;
+    var offset = 163.36 - (pct / 100) * 163.36;
+
+    var html = '<div class="titleblock">' +
+      '<div class="tb-main">' +
+        '<div class="tb-eyebrow">📂 Project Hub</div>' +
+        '<div class="tb-title">' + (currentProj ? esc(currentProj.name) : 'DESIGN COMPANION') + '</div>' +
+        '<div class="tb-sub">Your Design Companion</div>' +
+      '</div>';
+    
+    if (currentProj && state.project && state.project.info) {
+      var info = state.project.info;
+      var h = calculateTotalHeight(info.stories);
+      var tx = calculatePeriod(h, info.lx);
+      var ty = calculatePeriod(h, info.ly);
+
+      html += '<div class="tb-grid">' +
+        '<div class="tb-cell"><div class="tb-label">Seismic Parameters</div><div class="tb-value">Z=' + info.zone + ' · I=' + info.iValue + '<br>R=' + info.rValue + '</div></div>' +
+        '<div class="tb-cell"><div class="tb-label">Geotech / Soil</div><div class="tb-value">' + info.soilType + '<br><span style="font-size:10.5px; opacity:0.8;">' + esc(info.sbc) + '</span></div></div>' +
+        '<div class="tb-cell"><div class="tb-label">Calculated Period</div><div class="tb-value">Tx=' + tx + 's<br>Ty=' + ty + 's</div></div>' +
+        '<div class="tb-cell" style="flex-direction:row; gap:10px; align-items:center; min-width:145px; flex-shrink:0;">' +
+          '<div style="display:flex; flex-direction:column;">' +
+            '<div class="tb-label">Progress</div>' +
+            '<div class="tb-value accent">' + prog.done + '/' + prog.total + '</div>' +
+          '</div>' +
+          '<div class="progress-container">' +
+            '<svg class="progress-ring" width="64" height="64" viewBox="0 0 64 64">' +
+              '<circle stroke-width="4.5" fill="transparent" r="26" cx="32" cy="32"/>' +
+              '<circle class="progress-ring__circle" stroke="url(#orangeGrad)" stroke-width="4.5" fill="transparent" r="26" cx="32" cy="32" stroke-dasharray="163.36" stroke-dashoffset="' + offset + '" filter="url(#circleGlow)"/>' +
+            '</svg>' +
+            '<span class="progress-percentage">' + pct + '%</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }
+    
+    html += '</div>';
+    return html;
+  }
+
+  function renderFooter(){
+    var themeEmoji = document.body.classList.contains('light-theme') ? '🌙' : '☀️';
+    var themeText = document.body.classList.contains('light-theme') ? 'Dark mode' : 'Light mode';
+    return '<footer class="app-footer">' +
+      '<div style="display:flex; align-items:center; gap:8px;">' +
+        '<button class="theme-toggle-btn" data-action="toggle-theme" title="Toggle Theme" style="margin-right:8px;">' + themeEmoji + '</button>' +
+        '<span>Switch to ' + themeText + '</span>' +
+      '</div>' +
+      '<div>Made by Amish using Antigravity. All rights reserved.</div>' +
+    '</footer>';
+  }
+
+  function renderSidebar(){
+    var html = '<div class="sidebar">';
+    html += '<div class="sidebar-head">📂 Project Hub</div>';
+    html += '<div class="proj-list">';
+    if(state.projects.length === 0){
+      html += '<div style="color:var(--muted);font-size:12.5px;margin-bottom:12px;text-align:center;">No active files. Add below.</div>';
+    }
+    state.projects.forEach(function(p){
+      var pd = null;
+      var isActive = p.id === state.currentId;
+      var doneCount = 0;
+      var totalCount = PHASES.length;
+      if(isActive && state.project){
+        var activePhases = getActivePhases();
+        totalCount = activePhases.length;
+        activePhases.forEach(function(ph){ if(state.project.phases[ph.id] && state.project.phases[ph.id].done) doneCount++; });
+      }
+      html += '<div class="proj-item ' + (isActive?'active':'') + '" data-action="select-project" data-id="' + p.id + '">' +
+        '<div style="min-width:0; flex:1;">' +
+          '<div class="proj-name">' + esc(p.name) + '</div>' +
+          '<div class="proj-type">' + esc(p.type) + '</div>' +
+        '</div>' +
+        (isActive ? '<div class="proj-progress">' + doneCount + '/' + totalCount + '</div>' : '') +
+        '<button class="proj-del" data-action="delete-project" data-id="' + p.id + '" title="Remove">×</button>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    html += '<div class="add-project">';
+    if(state.projects.length === 0){
+      html += '<div class="template-label">Quick templates</div>';
+      html += '<div class="chip-row">';
+      PROJECT_TEMPLATES.forEach(function(t,i){
+        html += '<button class="chip" data-action="quick-add" data-idx="' + i + '">+ ' + esc(t.name) + '</button>';
+      });
+      html += '</div>';
+    }
+    html += '<input type="text" id="new-proj-name" placeholder="Workspace name">';
+    html += '<select id="new-proj-type">' +
+      '<option>Residential</option><option>Commercial</option><option>Other</option>' +
+    '</select>';
+    html += '<button class="btn" data-action="add-project">Add workspace</button>';
+    html += '<div style="display:flex; gap:8px; margin-top:12px;">' +
+      '<button class="btn" style="padding:8px; font-size:10px; flex:1;" data-action="export-project" title="Export project data to JSON file">📤 Export JSON</button>' +
+      '<button class="btn" style="padding:8px; font-size:10px; flex:1;" data-action="import-project-trigger" title="Import project from JSON file">📥 Import JSON</button>' +
+      '<input type="file" id="import-project-file" style="display:none;" accept=".json">' +
+    '</div>';
+    html += '</div>';
+    html += '</div>';
+    return html;
+  }
+
+  function renderMain(currentProj){
+    var html = '<div class="main">';
+    if(!currentProj){
+      html += '<div class="empty-state">' +
+        '<div class="big">No project selected</div>' +
+        '<div class="sub">Add a project from the job register to start tracking a model via the IS 456 / 1893 / 13920 verification checklist, perform DCR sanity checks, or consult structural reference tables.</div>' +
+      '</div></div>';
+      return html;
+    }
+    html += '<div class="tabs">' +
+      tabBtn('info','📋 Project Info') +
+      tabBtn('checklist','✅ Mission Control') +
+      tabBtn('dcr','📊 DCR / optimization log') +
+      tabBtn('codes','📖 IS code reference') +
+    '</div>';
+    html += '<div class="tab-body">';
+    if(state.tab === 'info') html += renderProjectInfo();
+    else if(state.tab === 'checklist') html += renderChecklist();
+    else if(state.tab === 'dcr') html += renderDcr();
+    else html += renderCodes();
+    html += '</div></div>';
+    return html;
+  }
+
+  function tabBtn(id,label){
+    return '<button class="tab-btn ' + (state.tab===id?'active':'') + '" data-action="set-tab" data-tab="' + id + '">' + label + '</button>';
+  }
+
+  function renderProjectInfo(){
+    var info = state.project.info;
+    var h = calculateTotalHeight(info.stories);
+    var tx = calculatePeriod(h, info.lx);
+    var ty = calculatePeriod(h, info.ly);
+
+    var html = '<div class="info-layout" style="display:grid; grid-template-columns: 1.2fr 1fr; gap:20px;">' +
+      
+      // Column 1: Inputs
+      '<div style="display:flex; flex-direction:column; gap:20px;">' +
+        '<div class="bento-box" style="background:rgba(0,0,0,0.1); border:2px solid var(--rule-strong); padding:20px; border-radius:16px;">' +
+          '<h3 style="margin-top:0; color:var(--ink);">Project Parameters</h3>' +
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">' +
+            '<div>' +
+              '<label class="template-label">Lx - Length X (m)</label>' +
+              '<input type="number" id="info-lx" value="' + info.lx + '" step="0.1" data-action="update-info">' +
+            '</div>' +
+            '<div>' +
+              '<label class="template-label">Ly - Width Y (m)</label>' +
+              '<input type="number" id="info-ly" value="' + info.ly + '" step="0.1" data-action="update-info">' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">' +
+            '<div>' +
+              '<label class="template-label">Seismic Zone Factor (Z)</label>' +
+              '<select id="info-zone" data-action="update-info">' +
+                '<option value="0.10" ' + (info.zone==0.10?'selected':'') + '>Zone II (Low, Z=0.10)</option>' +
+                '<option value="0.16" ' + (info.zone==0.16?'selected':'') + '>Zone III (Mod, Z=0.16)</option>' +
+                '<option value="0.24" ' + (info.zone==0.24?'selected':'') + '>Zone IV (Sev, Z=0.24)</option>' +
+                '<option value="0.36" ' + (info.zone==0.36?'selected':'') + '>Zone V (V.Sev, Z=0.36)</option>' +
+              '</select>' +
+            '</div>' +
+            '<div>' +
+              '<label class="template-label">Wind Speed Vb (m/s)</label>' +
+              '<input type="number" id="info-wind" value="' + info.windSpeed + '" data-action="update-info">' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">' +
+            '<div>' +
+              '<label class="template-label">Importance Factor (I)</label>' +
+              '<select id="info-ivalue" data-action="update-info">' +
+                '<option value="1.0" ' + (info.iValue==1.0?'selected':'') + '>1</option>' +
+                '<option value="1.2" ' + (info.iValue==1.2?'selected':'') + '>1.2</option>' +
+                '<option value="1.5" ' + (info.iValue==1.5?'selected':'') + '>1.5</option>' +
+              '</select>' +
+            '</div>' +
+            '<div>' +
+              '<label class="template-label">Reduction Factor (R)</label>' +
+              '<select id="info-rvalue" data-action="update-info">' +
+                '<option value="3.0" ' + (info.rValue==3.0?'selected':'') + '>3</option>' +
+                '<option value="4.0" ' + (info.rValue==4.0?'selected':'') + '>4</option>' +
+                '<option value="5.0" ' + (info.rValue==5.0?'selected':'') + '>5</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px;">' +
+            '<div>' +
+              '<label class="template-label">SBC @ depth from EGL/FGL</label>' +
+              '<input type="text" id="info-sbc" value="' + esc(info.sbc) + '" placeholder="e.g. 200 kN/m² @ 1.5m" data-action="update-info">' +
+            '</div>' +
+            '<div>' +
+              '<label class="template-label">Soil Type (IS 1893)</label>' +
+              '<select id="info-soil" data-action="update-info">' +
+                '<option value="1-Hard" ' + (info.soilType==='1-Hard'?'selected':'') + '>1-Hard</option>' +
+                '<option value="2-Medium" ' + (info.soilType==='2-Medium'?'selected':'') + '>2-Medium</option>' +
+                '<option value="3-Soft" ' + (info.soilType==='3-Soft'?'selected':'') + '>3-Soft</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px;">' +
+            '<div>' +
+              '<label class="template-label">AWI - Masonry Infill (Optional)</label>' +
+              '<input type="text" id="info-awi" value="' + esc(info.awi) + '" placeholder="e.g. Active, Semi, None" data-action="update-info">' +
+            '</div>' +
+            '<div>' +
+              '<label class="template-label">Flat Slab Design Required?</label>' +
+              '<select id="info-flatslab" data-action="update-info">' +
+                '<option value="No" ' + (!info.flatSlab?'selected':'') + '>No</option>' +
+                '<option value="Yes" ' + (info.flatSlab?'selected':'') + '>Yes</option>' +
+              '</select>' +
+            '</div>' +
+          '</div>' +
+        '</div>' +
+
+        // Period calculation output bento
+        '<div class="bento-box" style="background:rgba(0,0,0,0.15); border:2px solid var(--rule-strong); padding:20px; border-radius:16px; display:flex; flex-direction:column; gap:16px;">' +
+          '<h3 style="margin:0; color:var(--ink);">Calculated Fund. Time Periods</h3>' +
+          '<div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">' +
+            '<div style="background:rgba(255,255,255,0.02); border:1px solid var(--rule); padding:14px; border-radius:12px; text-align:center;">' +
+              '<div class="tb-label">Tx (Period X)</div>' +
+              '<div style="font-family:var(--font-mono); font-size:24px; font-weight:700; color:var(--rust); margin-top:6px;">' + tx + ' s</div>' +
+              '<div class="tb-label" style="font-size:8.5px; text-transform:none; margin-top:4px;">0.09·h / √Lx</div>' +
+            '</div>' +
+            '<div style="background:rgba(255,255,255,0.02); border:1px solid var(--rule); padding:14px; border-radius:12px; text-align:center;">' +
+              '<div class="tb-label">Ty (Period Y)</div>' +
+              '<div style="font-family:var(--font-mono); font-size:24px; font-weight:700; color:var(--rust); margin-top:6px;">' + ty + ' s</div>' +
+              '<div class="tb-label" style="font-size:8.5px; text-transform:none; margin-top:4px;">0.09·h / √Ly</div>' +
+            '</div>' +
+          '</div>' +
+          '<div class="dcr-hint" style="margin:0;">These are the IS 1893:2016 Cl 7.6.2 empirical fundamental natural periods based on height aboveground (' + h + 'm) and plan dimensions. Use these to scale base shear dynamic results in ETABS.</div>' +
+        '</div>' +
+      '</div>' +
+
+      // Column 2: Story Data
+      '<div class="bento-box" style="background:rgba(0,0,0,0.1); border:1px solid var(--rule-strong); padding:20px; border-radius:16px; display:flex; flex-direction:column; gap:12px;">' +
+        '<div style="display:flex; justify-content:space-between; align-items:center;">' +
+          '<h3 style="margin:0; color:var(--ink);">Story Height Data</h3>' +
+          '<span class="proj-progress" style="background:var(--rust-dim); border-color:var(--rust); color:var(--rust);">' + info.stories.length + ' stories</span>' +
+        '</div>' +
+
+        '<table style="margin:0;">' +
+          '<thead><tr><th>Story</th><th>Height (m)</th><th style="text-align:center; white-space:nowrap;">Above Ground?</th><th></th></tr></thead>' +
+          '<tbody>';
+          
+          info.stories.forEach(function(s, idx){
+            var isChecked = s.aboveGround !== false;
+            html += '<tr>' +
+              '<td><input type="text" class="story-edit-input" style="font-weight:700;" value="' + esc(s.name) + '" data-action="edit-story-name" data-idx="' + idx + '"></td>' +
+              '<td><div style="display:flex; align-items:center; gap:4px;"><input type="number" class="story-edit-input num" value="' + s.height + '" step="0.05" data-action="edit-story-height" data-idx="' + idx + '"> <span>m</span></div></td>' +
+              '<td style="text-align:center;"><input type="checkbox" data-action="toggle-story-above" data-idx="' + idx + '" ' + (isChecked?'checked':'') + '></td>' +
+              '<td style="text-align:right;"><button class="row-del" data-action="delete-story" data-idx="' + idx + '" title="Remove Floor">×</button></td>' +
+            '</tr>';
+          });
+
+          if(info.stories.length === 0){
+            html += '<tr><td colspan="4" style="color:var(--muted); text-align:center; padding:20px;">No stories added yet.</td></tr>';
+          }
+
+    html += '</tbody></table>' +
+        '<div style="background:rgba(0,0,0,0.15); border:2px solid var(--rule-strong); padding:14px; border-radius:12px; margin-top:6px;">' +
+          '<div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">' +
+            '<div class="template-label" style="margin:0;">Add Stories</div>' +
+            '<div style="display:flex; gap:6px;">' +
+              '<button class="chip ' + (state.storyAddMode==='single'?'active':'') + '" style="padding:2px 8px; font-size:9.5px; border-radius:4px; margin:0;" data-action="set-story-mode" data-mode="single">Single</button>' +
+              '<button class="chip ' + (state.storyAddMode==='multiple'?'active':'') + '" style="padding:2px 8px; font-size:9.5px; border-radius:4px; margin:0;" data-action="set-story-mode" data-mode="multiple">Multiple</button>' +
+            '</div>' +
+          '</div>' +
+          '<div id="form-story-single" style="display:' + (state.storyAddMode==='single'?'grid':'none') + '; grid-template-columns:1.2fr 1fr auto; gap:8px;">' +
+            '<input type="text" id="new-story-name" placeholder="Name (e.g. B1)" style="margin:0; padding:8px 12px; font-size:13px;">' +
+            '<input type="number" id="new-story-height" placeholder="Height (m)" step="0.05" style="margin:0; padding:8px 12px; font-size:13px;">' +
+            '<button class="btn" data-action="add-story" style="width:auto; padding:8px 16px; margin:0; box-shadow:none;">+</button>' +
+          '</div>' +
+          '<div id="form-story-multiple" style="display:' + (state.storyAddMode==='multiple'?'grid':'none') + '; grid-template-columns:1.2fr 1fr auto; gap:8px;">' +
+            '<input type="number" id="mult-story-count" placeholder="No. of floors" min="1" step="1" style="margin:0; padding:8px 12px; font-size:13px;">' +
+            '<input type="number" id="mult-story-height" placeholder="Height (m)" step="0.05" style="margin:0; padding:8px 12px; font-size:13px;">' +
+            '<button class="btn" data-action="add-multiple-stories" style="width:auto; padding:8px 16px; margin:0; box-shadow:none;">+</button>' +
+          '</div>' +
+        '</div>' +
+        '<div class="dcr-hint">Total Height Aboveground (ticked stories): <b>' + h + ' m</b>. Slabs and lateral wind loads rely on correct floor levels to distribute forces to columns.</div>' +
+      '</div>' +
+
+    '</div>';
+    
+    return html;
+  }
+
+  function renderChecklist(){
+    var prog = progressCount();
+    var html = '<div class="checklist-summary">' +
+      '<span>PHASES COMPLETE</span>' +
+      '<span>' + prog.done + '/' + prog.total + '</span>' +
+    '</div>';
+
+    var activePhases = getActivePhases();
+    activePhases.forEach(function(p, index){
+      var pd = state.project.phases[p.id] || {done:false,note:''};
+      var open = state.openPhase === p.id;
+      html += '<div class="phase ' + (pd.done?'done':'') + ' ' + (open?'open':'') + '">' +
+        '<div class="phase-head" data-action="toggle-phase" data-id="' + p.id + '">' +
+          '<div class="phase-num">' + (index + 1) + '</div>' +
+          '<div class="phase-check" data-action="toggle-done" data-id="' + p.id + '">' + (pd.done?'✓':'') + '</div>' +
+          '<div class="phase-title-wrap">' +
+            '<div class="phase-title">' + esc(p.title) + '</div>' +
+            (p.clause ? '<div class="phase-clause">' + esc(p.clause) + '</div>' : '') +
+            '<div class="phase-summary">' + esc(p.summary) + '</div>' +
+          '</div>' +
+          '<div class="phase-caret">' + (open?'▲':'▼') + '</div>' +
+        '</div>' +
+        '<div class="phase-detail">' +
+          '<div class="phase-watch"><b>If skipped / done wrong</b>' + esc(p.watch) + '</div>' +
+          '<textarea class="phase-note" placeholder="Notes for this project..." data-action="note-input" data-id="' + p.id + '">' + esc(pd.note||'') + '</textarea>' +
+        '</div>' +
+      '</div>';
+    });
+    return html;
+  }
+
+  function dcrClass(dcr){
+    var v = parseFloat(dcr);
+    if(isNaN(v)) return '';
+    if(v > 1.0) return 'dcr-fail';
+    if(v < 0.5) return 'dcr-warn';
+    return 'dcr-ok';
+  }
+
+  function renderDcr(){
+    var log = state.project.dcrLog || [];
+    var html = '<div class="phase-watch" style="margin-bottom:12px;"><b>How this maps to ETABS</b>' +
+      'Concrete Frame Design auto-computes required longitudinal steel and stirrup spacing every run (Design mode) — you don\'t manually "add" rebar as a separate step. The real levers are resizing the section, changing grade, or changing the load path. "Reinforcement overridden" below means switching that member to Check mode with a manually specified bar arrangement — a verification step, not a primary optimization move.' +
+    '</div>';
+    html += '<table><thead><tr>' +
+      '<th>Member</th><th>DCR</th><th>Governing combo</th><th>Action taken</th><th>Notes</th><th></th>' +
+    '</tr></thead><tbody>';
+    if(log.length===0){
+      html += '<tr><td colspan="6" style="color:var(--muted); text-align:center; padding: 20px;">No entries yet — log members as you optimize.</td></tr>';
+    }
+    log.forEach(function(row){
+      html += '<tr>' +
+        '<td>' + esc(row.member) + '</td>' +
+        '<td class="num"><span class="dcr-badge ' + dcrClass(row.dcr) + '">' + esc(row.dcr) + '</span></td>' +
+        '<td class="num">' + esc(row.combo||'—') + '</td>' +
+        '<td>' + esc(row.action) + '</td>' +
+        '<td style="color:var(--muted);">' + esc(row.note||'') + '</td>' +
+        '<td><button class="row-del" data-action="del-dcr" data-id="' + row.id + '" title="Remove">×</button></td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+
+    html += '<div class="dcr-form">' +
+      '<input type="text" id="dcr-member" placeholder="Member (e.g. B12, C4)">' +
+      '<input type="text" id="dcr-value" placeholder="DCR (e.g. 0.92)">' +
+      '<input type="text" id="dcr-combo" placeholder="Governing combo">' +
+      '<select id="dcr-action">' +
+        '<option>Resized section</option><option>Grade increased</option>' +
+        '<option>Reinforcement overridden (Check mode)</option><option>Load path / framing changed</option>' +
+        '<option>Accepted as-designed</option>' +
+      '</select>' +
+      '<button class="btn" data-action="add-dcr" style="width:auto;padding:8px 14px;">Log</button>' +
+    '</div>';
+    html += '<div style="display:flex; justify-content:space-between; align-items:center; margin-top:14px; flex-wrap:wrap; gap:10px;">' +
+      '<div class="dcr-hint" style="margin:0; flex:1;">Target band for an economical design: DCR 0.75–0.95. Below 0.5 across most combos usually means an oversized member — resize before adding grade. See Phase 16.</div>' +
+      (log.length > 0 ? '<button class="btn" style="width:auto; padding:8px 16px; margin:0; flex-shrink:0;" data-action="export-dcr-csv">📊 Export CSV</button>' : '') +
+    '</div>';
+    return html;
+  }
+
+  function renderCodes(){
+    var html = '<input type="text" id="codes-search" placeholder="Search clause, topic, or code…" ' +
+      'style="width:100%;background:rgba(255,255,255,0.04);border:1px solid var(--rule-strong);color:var(--ink);border-radius:10px;padding:12px 14px;font-size:13.5px;margin-bottom:16px;transition:all 0.2s ease;">';
+    html += '<table id="codes-table"><thead><tr><th>Code</th><th>Clause</th><th>Topic</th><th>Value / formula</th><th></th></tr></thead><tbody>';
+    CODES.forEach(function(c){
+      var searchStr = (c.code+' '+c.clause+' '+c.topic+' '+c.value).toLowerCase();
+      html += '<tr data-search="' + esc(searchStr) + '">' +
+        '<td class="num">' + esc(c.code) + '</td>' +
+        '<td class="num" style="color:var(--brass);">' + esc(c.clause) + '</td>' +
+        '<td>' + esc(c.topic) + '</td>' +
+        '<td style="color:var(--muted);">' + esc(c.value) + '</td>' +
+        '<td>' + (c.tag==='v' ? '<span class="dcr-badge dcr-ok">VERIFIED</span>' : '<span class="dcr-badge dcr-warn">CHECK</span>') + '</td>' +
+      '</tr>';
+    });
+    html += '</tbody></table>';
+    html += '<div class="dcr-hint">VERIFIED = confirmed against multiple independent sources. CHECK = standard practice / commonly cited — cross-verify the exact sub-clause against your physical code book before quoting it in a BMC submission. Sub-clause numbering shifts slightly across editions and amendments.</div>';
+    
+    // Dynamically add Concrete Grade Modulus Calculator
+    html += '<div class="bento-box" style="background:rgba(0,0,0,0.1); border:1px solid var(--rule-strong); padding:20px; border-radius:16px; margin-top:20px;">' +
+      '<h3 style="margin-top:0; color:var(--ink);">Concrete Grade Modulus Reference (IS 456)</h3>' +
+      '<div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; align-items:center;">' +
+        '<div>' +
+          '<label class="template-label">Select Concrete Grade</label>' +
+          '<select id="calc-fck" style="width:100%; padding:10px 12px; border-radius:8px; border:1px solid var(--rule-strong); background:rgba(0,0,0,0.2); color:var(--ink);">' +
+            '<option value="20">M20 (fck = 20 MPa)</option>' +
+            '<option value="25" selected>M25 (fck = 25 MPa)</option>' +
+            '<option value="30">M30 (fck = 30 MPa)</option>' +
+            '<option value="35">M35 (fck = 35 MPa)</option>' +
+            '<option value="40">M40 (fck = 40 MPa)</option>' +
+            '<option value="45">M45 (fck = 45 MPa)</option>' +
+            '<option value="50">M50 (fck = 50 MPa)</option>' +
+            '<option value="60">M60 (fck = 60 MPa)</option>' +
+          '</select>' +
+        '</div>' +
+        '<div id="calc-fck-results" style="background:rgba(255,255,255,0.02); border:1px solid var(--rule); padding:14px; border-radius:12px; font-family:var(--font-mono); font-size:12.5px; line-height:1.6;">' +
+          // filled dynamically
+        '</div>' +
+      '</div>' +
+    '</div>';
+    
+    return html;
+  }
+
+  function bindCodesSearch(){
+    var box = document.getElementById('codes-search');
+    if(!box) return;
+    box.addEventListener('input', function(){
+      var q = box.value.toLowerCase();
+      document.querySelectorAll('#codes-table tbody tr').forEach(function(row){
+        var s = row.getAttribute('data-search') || '';
+        row.style.display = s.indexOf(q) === -1 ? 'none' : '';
+      });
+    });
+  }
+
+  function updateFckCalculations(){
+    var select = document.getElementById('calc-fck');
+    var results = document.getElementById('calc-fck-results');
+    if(!select || !results) return;
+    var fck = parseFloat(select.value);
+    var ec = Math.round(5000 * Math.sqrt(fck));
+    var fcr = parseFloat((0.7 * Math.sqrt(fck)).toFixed(2));
+    var tc = parseFloat((0.25 * Math.sqrt(fck)).toFixed(2));
+    
+    results.innerHTML = 
+      '<div><b>Ec (Elastic Modulus):</b> ' + ec.toLocaleString() + ' N/mm²</div>' +
+      '<div><b>fcr (Flexural Strength):</b> ' + fcr + ' MPa</div>' +
+      '<div><b>tc (Punching Shear Limit):</b> ' + tc + ' MPa</div>';
+  }
+
+  function esc(s){
+    if(s===undefined||s===null) return '';
+    return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  /* ---------- EVENTS ============ */
+  function bindEvents(){
+    document.querySelectorAll('[data-action]').forEach(function(el){
+      var action = el.getAttribute('data-action');
+      if(el._bound) return;
+      el._bound = true;
+
+      if(action==='select-project'){
+        el.addEventListener('click', function(){ selectProject(el.getAttribute('data-id')); });
+      }
+      if(action==='delete-project'){
+        el.addEventListener('click', function(e){ deleteProject(el.getAttribute('data-id'), e); });
+      }
+      if(action==='add-project'){
+        el.addEventListener('click', function(){
+          var name = document.getElementById('new-proj-name').value;
+          var type = document.getElementById('new-proj-type').value;
+          addProject(name, type);
+        });
+      }
+      if(action==='quick-add'){
+        el.addEventListener('click', function(){
+          var t = PROJECT_TEMPLATES[parseInt(el.getAttribute('data-idx'),10)];
+          addProject(t.name, t.type);
+        });
+      }
+      if(action==='set-tab'){
+        el.addEventListener('click', function(){ state.tab = el.getAttribute('data-tab'); render(); });
+      }
+      if(action==='toggle-phase'){
+        el.addEventListener('click', function(){
+          var id = parseInt(el.getAttribute('data-id'),10);
+          state.openPhase = (state.openPhase===id) ? null : id;
+          render();
+        });
+      }
+      if(action==='toggle-done'){
+        el.addEventListener('click', function(e){
+          e.stopPropagation();
+          var id = el.getAttribute('data-id');
+          state.project.phases[id].done = !state.project.phases[id].done;
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='note-input'){
+        el.addEventListener('blur', function(){
+          var id = el.getAttribute('data-id');
+          state.project.phases[id].note = el.value;
+          saveCurrentProject();
+        });
+      }
+      if(action==='add-dcr'){
+        el.addEventListener('click', function(){
+          var member = document.getElementById('dcr-member').value.trim();
+          var dcr = document.getElementById('dcr-value').value.trim();
+          var combo = document.getElementById('dcr-combo').value.trim();
+          var actionVal = document.getElementById('dcr-action').value;
+          if(!member || !dcr) return;
+          state.project.dcrLog.push({id:'r'+Date.now(), member:member, dcr:dcr, combo:combo, action:actionVal, note:''});
+          saveCurrentProject();
+          render();
+          state.tab='dcr';
+        });
+      }
+      if(action==='del-dcr'){
+        el.addEventListener('click', function(){
+          var id = el.getAttribute('data-id');
+          state.project.dcrLog = state.project.dcrLog.filter(function(r){return r.id!==id;});
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='toggle-theme'){
+        el.addEventListener('click', function(){
+          document.body.classList.toggle('light-theme');
+          var isLight = document.body.classList.contains('light-theme');
+          storageSet('app-theme', isLight ? 'light' : 'dark');
+          render();
+        });
+      }
+      if(action==='scroll-top'){
+        el.addEventListener('click', function(){
+          window.scrollTo({top: 0, behavior: 'smooth'});
+        });
+      }
+      if(action==='update-info'){
+        var handler = function(){
+          var lx = parseFloat(document.getElementById('info-lx').value) || 0;
+          var ly = parseFloat(document.getElementById('info-ly').value) || 0;
+          var zone = parseFloat(document.getElementById('info-zone').value) || 0;
+          var wind = parseFloat(document.getElementById('info-wind').value) || 0;
+          var ivalue = parseFloat(document.getElementById('info-ivalue').value) || 0;
+          var rvalue = parseFloat(document.getElementById('info-rvalue').value) || 0;
+          var awi = document.getElementById('info-awi').value.trim();
+          var sbc = document.getElementById('info-sbc').value.trim();
+          var soil = document.getElementById('info-soil').value;
+          var flatSlab = document.getElementById('info-flatslab').value === 'Yes';
+
+          state.project.info.lx = lx;
+          state.project.info.ly = ly;
+          state.project.info.zone = zone;
+          state.project.info.windSpeed = wind;
+          state.project.info.iValue = ivalue;
+          state.project.info.rValue = rvalue;
+          state.project.info.awi = awi;
+          state.project.info.sbc = sbc;
+          state.project.info.soilType = soil;
+          state.project.info.flatSlab = flatSlab;
+
+          saveCurrentProject();
+          render();
+        };
+        el.addEventListener('change', handler);
+        el.addEventListener('blur', handler);
+        el.addEventListener('keydown', function(e){
+          if(e.key === 'Enter') {
+            el.blur();
+          }
+        });
+      }
+      if(action==='delete-story'){
+        el.addEventListener('click', function(){
+          var idx = parseInt(el.getAttribute('data-idx'),10);
+          state.project.info.stories.splice(idx, 1);
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='add-story'){
+        el.addEventListener('click', function(){
+          var name = document.getElementById('new-story-name').value.trim();
+          var heightInput = document.getElementById('new-story-height').value;
+          var height = parseFloat(heightInput);
+          if(!name || isNaN(height) || height === 0) return;
+          
+          state.project.info.stories.push({
+            id: 's' + Date.now(),
+            name: name,
+            height: height,
+            aboveGround: height > 0
+          });
+          saveCurrentProject();
+          render();
+        });
+      }
+
+      if(action==='toggle-story-above'){
+        el.addEventListener('change', function(){
+          var idx = parseInt(el.getAttribute('data-idx'),10);
+          state.project.info.stories[idx].aboveGround = el.checked;
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='export-project'){
+        el.addEventListener('click', function(){
+          if(!state.currentId || !state.project) {
+            alert('Please select or create a project first.');
+            return;
+          }
+          var currentProj = state.projects.find(function(p){return p.id===state.currentId;});
+          var exportData = {
+            metadata: currentProj,
+            data: state.project
+          };
+          var str = JSON.stringify(exportData, null, 2);
+          var blob = new Blob([str], {type: 'application/json'});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          a.download = (currentProj.name || 'project') + '_companion_data.json';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+          
+          state.project.info.exported = true;
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='import-project-trigger'){
+        el.addEventListener('click', function(){
+          document.getElementById('import-project-file').click();
+        });
+      }
+      if(action==='export-dcr-csv'){
+        el.addEventListener('click', function(){
+          if(!state.project || !state.project.dcrLog || state.project.dcrLog.length === 0) return;
+          var csv = 'Member,DCR,Governing Combo,Action Taken\n';
+          state.project.dcrLog.forEach(function(row){
+            csv += '"' + (row.member||'').replace(/"/g, '""') + '",' +
+                   '"' + (row.dcr||'').replace(/"/g, '""') + '",' +
+                   '"' + (row.combo||'').replace(/"/g, '""') + '",' +
+                   '"' + (row.action||'').replace(/"/g, '""') + '"\n';
+          });
+          var blob = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+          var url = URL.createObjectURL(blob);
+          var a = document.createElement('a');
+          a.href = url;
+          var currentProj = state.projects.find(function(p){return p.id===state.currentId;});
+          a.download = (currentProj ? currentProj.name : 'project') + '_DCR_log.csv';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          URL.revokeObjectURL(url);
+        });
+      }
+      if(action==='set-story-mode'){
+        el.addEventListener('click', function(){
+          state.storyAddMode = el.getAttribute('data-mode');
+          render();
+        });
+      }
+      if(action==='add-multiple-stories'){
+        el.addEventListener('click', function(){
+          var countInput = document.getElementById('mult-story-count').value;
+          var heightInput = document.getElementById('mult-story-height').value;
+          var count = parseInt(countInput,10);
+          var height = parseFloat(heightInput);
+          if(isNaN(count) || count < 1 || isNaN(height) || height === 0) return;
+          
+          for(var i = 0; i < count; i++){
+            var num = state.project.info.stories.length + 1;
+            state.project.info.stories.push({
+              id: 's' + Date.now() + '_' + i,
+              name: 'Story' + num,
+              height: height,
+              aboveGround: height > 0
+            });
+          }
+          saveCurrentProject();
+          render();
+        });
+      }
+      if(action==='edit-story-name'){
+        el.addEventListener('change', function(){
+          var idx = parseInt(el.getAttribute('data-idx'),10);
+          state.project.info.stories[idx].name = el.value.trim();
+          saveCurrentProject();
+          render();
+        });
+        el.addEventListener('keydown', function(e){
+          if(e.key === 'Enter') el.blur();
+        });
+      }
+      if(action==='edit-story-height'){
+        el.addEventListener('change', function(){
+          var idx = parseInt(el.getAttribute('data-idx'),10);
+          var hVal = parseFloat(el.value);
+          if(!isNaN(hVal) && hVal !== 0){
+            state.project.info.stories[idx].height = hVal;
+            saveCurrentProject();
+          }
+          render();
+        });
+        el.addEventListener('keydown', function(e){
+          if(e.key === 'Enter') el.blur();
+        });
+      }
+    });
+    
+    var fileInput = document.getElementById('import-project-file');
+    if(fileInput && !fileInput._bound){
+      fileInput._bound = true;
+      fileInput.addEventListener('change', function(e){
+        var file = e.target.files[0];
+        if(!file) return;
+        var reader = new FileReader();
+        reader.onload = async function(evt){
+          try {
+            var imported = JSON.parse(evt.target.result);
+            if(!imported.metadata || !imported.data){
+              alert('Invalid file format. Make sure it is a project companion export file.');
+              return;
+            }
+            var newId = 'p' + Date.now() + Math.floor(Math.random()*1000);
+            imported.metadata.id = newId;
+            if (imported.data && imported.data.info) {
+              imported.data.info.exported = true;
+            }
+            state.projects.push(imported.metadata);
+            await storageSet('projects-list', state.projects);
+            await storageSet('project:' + newId, imported.data);
+            await selectProject(newId);
+            alert('Project "' + imported.metadata.name + '" imported successfully!');
+          } catch(err) {
+            alert('Failed to parse file: ' + err.message);
+          }
+        };
+        reader.readAsText(file);
+        fileInput.value = '';
+      });
+    }
+  }
+
+  function updateScrollIndicator(){
+    var scrollTop = window.scrollY;
+    var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+    var pct = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
+    var fill = document.getElementById('scroll-bar-fill');
+    if(fill) {
+      fill.style.setProperty('--scroll-pct', pct + '%');
+    }
+  }
+  window.addEventListener('scroll', updateScrollIndicator);
+
+  // Video scroll scrubbing setup
+  (function(){
+    var video = document.querySelector('.bg-video');
+    if(!video) return;
+    
+    video.autoplay = false;
+    video.loop = false;
+    
+    var targetTime = 0;
+    var currentTime = 0;
+    
+    function updateTargetTime(){
+      if(!video.duration) return;
+      var scrollTop = window.scrollY;
+      var docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      var pct = docHeight > 0 ? (scrollTop / docHeight) : 0;
+      targetTime = pct * video.duration;
+    }
+    
+    window.addEventListener('scroll', updateTargetTime);
+    window.addEventListener('resize', updateTargetTime);
+    
+    function smoothScrub(){
+      if(video.duration){
+        currentTime += (targetTime - currentTime) * 0.12;
+        if(currentTime < 0) currentTime = 0;
+        if(currentTime > video.duration - 0.05) currentTime = video.duration - 0.05;
+        video.currentTime = currentTime;
+      }
+      requestAnimationFrame(smoothScrub);
+    }
+    
+    video.addEventListener('loadedmetadata', function(){
+      updateTargetTime();
+      requestAnimationFrame(smoothScrub);
+    });
+    if(video.readyState >= 1) {
+      updateTargetTime();
+      requestAnimationFrame(smoothScrub);
+    }
+  })();
+
+  // Canvas Particles
+  (function(){
+    var canvas = document.createElement('canvas');
+    canvas.style.position = 'fixed';
+    canvas.style.top = '0';
+    canvas.style.left = '0';
+    canvas.style.width = '100vw';
+    canvas.style.height = '100vh';
+    canvas.style.zIndex = '-2';
+    canvas.style.pointerEvents = 'none';
+    document.body.appendChild(canvas);
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    function resize(){
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+    for(var i=0; i<35; i++){
+      particles.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        vx: (Math.random() - 0.5) * 0.35,
+        vy: (Math.random() - 0.5) * 0.35,
+        size: Math.random() * 2 + 1,
+        color: Math.random() > 0.5 ? '#00f0ff' : '#ff007f'
+      });
+    }
+    function loop(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      var isLight = document.body.classList.contains('light-theme');
+      particles.forEach(function(p){
+        p.x += p.vx;
+        p.y += p.vy;
+        if(p.x < 0 || p.x > canvas.width) p.vx *= -1;
+        if(p.y < 0 || p.y > canvas.height) p.vy *= -1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+        ctx.fillStyle = isLight ? (p.color === '#00f0ff' ? '#ff5e00' : '#b45309') : p.color;
+        ctx.shadowColor = isLight ? (p.color === '#00f0ff' ? '#ff5e00' : '#b45309') : p.color;
+        ctx.shadowBlur = 8;
+        ctx.fill();
+      });
+      requestAnimationFrame(loop);
+    }
+    loop();
+  })();
+
+  init();
+})();
+</script>
+</body>
+</html>
